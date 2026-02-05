@@ -303,6 +303,28 @@ export default function App() {
               return (<button key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); setFacilityTab('next14'); }} className="w-full text-left flex flex-col p-5 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-white transition-all active:scale-[0.98] shadow-sm"><div className="flex justify-between items-center mb-2 w-full"><span className="text-xs font-bold text-blue-600 uppercase">{facility.name}</span><span className={`text-xs font-bold px-3 py-1 rounded-full border ${staff ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>{staff ? staff.name : '未割当'}</span></div><p className="text-base font-bold text-slate-800 truncate">{event.title}</p></button>);
             })}
           </div>
+          {upcomingByFacility.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <p className="text-xs font-bold text-slate-400 mb-3">直近の予定</p>
+              <div className="space-y-2">
+                {upcomingByFacility.filter(({ facility, event }) => {
+                  const eventDate = new Date(event.start);
+                  return eventDate.toDateString() !== new Date().toDateString();
+                }).map(({ facility, event }, i) => {
+                  const eventDate = new Date(event.start);
+                  return (
+                    <div key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); }} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-blue-600">{facility.name}</span>
+                        <span className="text-xs text-slate-500 truncate max-w-[120px]">{event.title}</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400">{eventDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
         <div className="grid grid-cols-1 gap-4">
           <button onClick={() => setView('facility_list')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all"><HomeIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">清掃スケジュール</p><p className="text-xs text-slate-400">施設ごとの予定管理</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
