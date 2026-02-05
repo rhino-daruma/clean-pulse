@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   const { code, error } = req.query;
 
   if (error || !code) {
-    return res.json({ status: 'error', message: 'no code', query: req.query });
+    return res.redirect('/?auth=error&message=' + encodeURIComponent('LINEログインがキャンセルされました'));
   }
 
   try {
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const tokenData = await tokenResponse.json();
 
     if (!tokenData.access_token) {
-      return res.json({ status: 'token_error', tokenData, env_check: { has_id: !!process.env.LINE_CHANNEL_ID, has_secret: !!process.env.LINE_CHANNEL_SECRET } });
+      return res.redirect('/?auth=error&message=' + encodeURIComponent('トークン取得に失敗しました'));
     }
 
     const profileResponse = await fetch('https://api.line.me/v2/profile', {
@@ -32,9 +32,20 @@ export default async function handler(req, res) {
 
     const profile = await profileResponse.json();
 
-    return res.json({ status: 'success', profile });
+    if (!profile.userId) {
+      return res.redirect('/?auth=error&message=' + encodeURIComponent('プロフィール取得に失敗しました'));
+    }
+
+    const params = new URLSearchParams({
+      auth: 'success',
+      line_id: profile.userId,
+      line_name: profile.displayName,
+      line_picture: profile.pictureUrl || '',
+    });
+
+    res.redirect('/?' + params.toString());
 
   } catch (err) {
-    return res.json({ status: 'catch_error', error: err.message });
+    res.redirect('/?auth=error&message=' + encodeURIComponent('認証処理中にエラーが発生しました'));
   }
 }
