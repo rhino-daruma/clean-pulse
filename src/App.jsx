@@ -54,15 +54,40 @@ export default function App() {
   const [inviteCode, setInviteCode] = useState('');
   const [inviteError, setInviteError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [view, setView] = useState('top');
+  const getInitialView = () => {
+    const hash = window.location.hash.slice(1);
+    const validViews = ['top', 'facility_list', 'facility_detail', 'facility_settings', 'staff_list', 'staff_detail'];
+    return validViews.includes(hash) ? hash : 'top';
+  };
+  const [view, setViewState] = useState(getInitialView);
+  const setView = (newView) => {
+    window.location.hash = newView;
+    setViewState(newView);
+  };
   const [facilityTab, setFacilityTab] = useState('next14');
   const [facilities, setFacilities] = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [selections, setSelections] = useState([]);
   const [calendarEvents, setCalendarEvents] = useState({});
   const [isSyncing, setIsSyncing] = useState(false);
-  const [selectedFacilityId, setSelectedFacilityId] = useState(null);
-  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [selectedFacilityId, setSelectedFacilityIdState] = useState(() => {
+    const saved = localStorage.getItem('cp_selected_facility');
+    return saved || null;
+  });
+  const setSelectedFacilityId = (id) => {
+    if (id) localStorage.setItem('cp_selected_facility', id);
+    else localStorage.removeItem('cp_selected_facility');
+    setSelectedFacilityIdState(id);
+  };
+  const [selectedStaffId, setSelectedStaffIdState] = useState(() => {
+    const saved = localStorage.getItem('cp_selected_staff');
+    return saved || null;
+  });
+  const setSelectedStaffId = (id) => {
+    if (id) localStorage.setItem('cp_selected_staff', id);
+    else localStorage.removeItem('cp_selected_staff');
+    setSelectedStaffIdState(id);
+  };
   const [expandedEventId, setExpandedEventId] = useState(null);
   const [reportingTask, setReportingTask] = useState(null);
   const [reportRating, setReportRating] = useState('normal');
