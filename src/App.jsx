@@ -136,6 +136,21 @@ export default function App() {
       if (facData) setFacilities(facData.map(f => ({ id: f.id, name: f.name, icalUrl: f.ical_url || '', inventoryUrl: f.inventory_url || '', manualUrl: f.manual_url || '' })));
       const { data: selData } = await supabase.from('selections').select('*');
       if (selData) setSelections(selData.map(s => ({ dbId: s.id, facilityId: s.facility_id, eventId: s.event_id, staffId: s.staff_id, status: s.status, isCompleted: s.is_completed, completedAt: s.completed_at, rating: s.rating, reportText: s.report_text, reportImages: s.report_images || [], isVerified: s.is_verified })));
+      // 全施設のカレンダーを読み込み
+      if (facData && facData.length > 0) {
+        for (const f of facData) {
+          if (f.ical_url) {
+            try {
+              const res = await fetch('/api/ical-proxy?url=' + encodeURIComponent(f.ical_url));
+              if (res.ok) {
+                const data = await res.text();
+                const parsed = parseIcal(data);
+                setCalendarEvents(prev => ({ ...prev, [f.id]: parsed }));
+              }
+            } catch (e) { console.error(e); }
+          }
+        }
+      }
     };
     loadData();
   }, [authPhase]);
@@ -314,11 +329,11 @@ export default function App() {
                   const eventDate = new Date(event.start);
                   return (
                     <div key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); }} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-blue-600">{facility.name}</span>
-                        <span className="text-xs text-slate-500 truncate max-w-[120px]">{event.title}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-bold text-blue-600 flex-shrink-0">{facility.name}</span>
+                        <span className="text-xs font-bold text-slate-400 flex-shrink-0">{eventDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
+                        <span className="text-xs text-slate-500 truncate">{event.title}</span>
                       </div>
-                      <span className="text-xs font-bold text-slate-400">{eventDate.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', weekday: 'short' })}</span>
                     </div>
                   );
                 })}
