@@ -130,7 +130,7 @@ export default function App() {
   useEffect(() => {
     if (authPhase !== 'app') return;
     const loadData = async () => {
-      const { data: staffData } = await supabase.from('users').select('*');
+      const { data: staffData } = await supabase.from('users').select('*').eq('role', 'staff');
       if (staffData) setStaffList(staffData.map(u => ({ id: u.line_id, name: u.line_name })));
       const { data: facData } = await supabase.from('facilities').select('*').order('created_at', { ascending: true });
       if (facData) setFacilities(facData.map(f => ({ id: f.id, name: f.name, icalUrl: f.ical_url || '', inventoryUrl: f.inventory_url || '', manualUrl: f.manual_url || '' })));
@@ -321,56 +321,16 @@ export default function App() {
     </div>
   );
 
-  const renderEventCard = (event) => {
-    const date = new Date(event.start);
-    const isExpanded = expandedEventId === event.id;
-    const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
-    const completed = assigned.filter(s => s.isCompleted);
-    const isFullyVerified = completed.length > 0 && completed.every(l => l.isVerified);
-    return (
-      <div key={event.id} className={`bg-white border rounded-2xl shadow-sm overflow-hidden transition-all ${isExpanded ? 'border-blue-200 ring-4 ring-blue-500/5' : 'border-slate-100'}`}>
-        <div className="p-5 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : event.id)}>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">{date.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span>
-            {assigned.length > 0 ? assigned.map(a => <span key={a.staffId} className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">{staffList.find(s => s.id === a.staffId)?.name}</span>) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">未割当</span>}
-          </div>
-          <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-800 truncate pr-6">{event.title}</h4><ChevronDownIcon className={`w-5 h-5 text-slate-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/></div>
-        </div>
-        {isExpanded && (
-          <div className="px-5 pb-6 border-t border-slate-50 pt-5 space-y-5">
-            <div className="space-y-4">
-              {event.description && <div className="bg-slate-50 p-4 rounded-xl border border-slate-100"><p className="text-xs text-slate-400 font-bold mb-2">カレンダー詳細</p><p className="text-xs text-slate-600 whitespace-pre-wrap">{event.description}</p></div>}
-              <div className="space-y-3">
-                <p className="text-xs text-slate-400 font-bold">担当スタッフを選択</p>
-                <div className="flex flex-wrap gap-2">
-                  {staffList.map(s => { const isSel = selections.some(sel => sel.eventId === event.id && sel.staffId === s.id && sel.facilityId === selectedFacilityId && sel.status === 'available'); return <button key={s.id} onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, s.id); }} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${isSel ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}>{s.name}</button>; })}
-                </div>
-                {assigned.filter(a => !a.isCompleted).map(a => { const s = staffList.find(st => st.id === a.staffId); if (!s) return null; return <button key={s.id} onClick={(e) => { e.stopPropagation(); setReportingTask({ eventId: event.id, staffId: s.id }); }} className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 text-white text-sm font-bold rounded-xl shadow-lg active:scale-[0.98]"><CheckCircleIcon className="w-5 h-5" />{s.name} として完了報告</button>; })}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   const renderFacilityDetail = () => {
     const rawEvents = (selectedFacilityId && calendarEvents[selectedFacilityId]) || [];
     const now = new Date(); const limit = new Date(); limit.setDate(now.getDate() + 14);
     const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-    const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const dayAfterStart = new Date(todayStart); dayAfterStart.setDate(dayAfterStart.getDate() + 2);
-    
     const filtered = rawEvents.filter(event => {
       const eDate = new Date(event.start);
       const isDone = selections.some(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.isCompleted);
       return facilityTab === 'next14' ? (!isDone && eDate >= todayStart && eDate <= limit) : isDone;
     });
     const sorted = [...filtered].sort((a, b) => facilityTab === 'next14' ? new Date(a.start) - new Date(b.start) : new Date(b.start) - new Date(a.start));
-    
-    const todayEvents = sorted.filter(e => { const d = new Date(e.start); return d >= todayStart && d < tomorrowStart; });
-    const tomorrowEvents = sorted.filter(e => { const d = new Date(e.start); return d >= tomorrowStart && d < dayAfterStart; });
-    const laterEvents = sorted.filter(e => { const d = new Date(e.start); return d >= dayAfterStart; });
     return (
       <div className="space-y-6 pb-20 pt-2">
         <div className="flex items-center justify-between">
@@ -379,33 +339,14 @@ export default function App() {
             <button onClick={() => currentFacility && currentFacility.icalUrl && syncFacilityCalendar(currentFacility)} className={`p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm ${isSyncing ? 'animate-spin text-blue-500' : 'text-slate-400'}`}><RefreshIcon className="w-5 h-5" /></button>
             {currentFacility?.inventoryUrl && <a href={currentFacility.inventoryUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100"><ClipboardIcon className="w-5 h-5" /></a>}
             {currentFacility?.manualUrl && <a href={currentFacility.manualUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-green-50 text-green-600 rounded-xl border border-green-100"><BookOpenIcon className="w-5 h-5" /></a>}
-            {isAdmin && <button onClick={() => { startEditingFacility(currentFacility); setView('facility_settings'); }} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl border border-slate-100"><PencilIcon className="w-5 h-5" /></button>}
           </div>
         </div>
         <div className="flex p-1.5 bg-slate-100 rounded-xl">
           <button onClick={() => setFacilityTab('next14')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'next14' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>今後14日間</button>
           <button onClick={() => setFacilityTab('completed')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'completed' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>清掃完了</button>
         </div>
-        <div className="space-y-6">
-          {facilityTab === 'next14' ? (
-            <>
-              {/* 本日 */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3"><span className="text-xs font-bold bg-blue-600 text-white px-3 py-1 rounded-full">本日</span><div className="flex-1 h-px bg-slate-200"></div></div>
-                {todayEvents.length === 0 ? (<div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-200"><p className="text-xs text-slate-400">予定なし</p></div>) : todayEvents.map(event => renderEventCard(event))}
-              </div>
-              {/* 明日 */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3"><span className="text-xs font-bold bg-slate-600 text-white px-3 py-1 rounded-full">明日</span><div className="flex-1 h-px bg-slate-200"></div></div>
-                {tomorrowEvents.length === 0 ? (<div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-200"><p className="text-xs text-slate-400">予定なし</p></div>) : tomorrowEvents.map(event => renderEventCard(event))}
-              </div>
-              {/* 明後日以降 */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3"><span className="text-xs font-bold bg-slate-400 text-white px-3 py-1 rounded-full">明後日以降</span><div className="flex-1 h-px bg-slate-200"></div></div>
-                {laterEvents.length === 0 ? (<div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-200"><p className="text-xs text-slate-400">予定なし</p></div>) : laterEvents.map(event => renderEventCard(event))}
-              </div>
-            </>
-          ) : (sorted.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">完了した清掃はありません</p></div>) : sorted.map(event => {
+        <div className="space-y-4">
+          {sorted.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">{facilityTab === 'next14' ? (currentFacility?.icalUrl ? '今後14日間の予定はありません' : 'iCal URLが未設定です') : '完了した清掃はありません'}</p></div>) : sorted.map(event => {
             const date = new Date(event.start); const dayLabel = getDayLabel(event.start);
             const isExpanded = expandedEventId === event.id;
             const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
@@ -478,7 +419,7 @@ export default function App() {
       </section>
       <div className="space-y-3 pb-20">
         <h3 className="text-xs font-bold text-slate-400 pl-1">登録済み ({facilities.length})</h3>
-        {facilities.map(f => (<div key={f.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm"><p className="font-bold text-slate-800 truncate pr-4">{f.name}</p><div className="flex gap-1 flex-shrink-0"><button onClick={() => { setSelectedFacilityId(f.id); setView('facility_detail'); setFacilityTab('next14'); }} className="p-3 text-blue-400 hover:text-blue-600"><CalendarIcon className="w-5 h-5"/></button><button onClick={() => startEditingFacility(f)} className="p-3 text-slate-400 hover:text-blue-600"><PencilIcon className="w-5 h-5"/></button><button onClick={() => removeFacility(f.id)} className="p-3 text-red-400 hover:text-red-600"><TrashIcon className="w-5 h-5"/></button></div></div>))}
+        {facilities.map(f => (<div key={f.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm"><p className="font-bold text-slate-800 truncate pr-4">{f.name}</p><div className="flex gap-1 flex-shrink-0"><button onClick={() => startEditingFacility(f)} className="p-3 text-slate-400 hover:text-blue-600"><PencilIcon className="w-5 h-5"/></button><button onClick={() => removeFacility(f.id)} className="p-3 text-red-400 hover:text-red-600"><TrashIcon className="w-5 h-5"/></button></div></div>))}
       </div>
     </div>
   );
