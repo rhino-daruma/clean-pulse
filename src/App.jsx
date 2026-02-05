@@ -286,6 +286,11 @@ export default function App() {
   const renderTop = () => {
     const todayStr = new Date().toDateString();
     const todaySchedules = facilities.flatMap(f => { const events = calendarEvents[f.id] || []; return events.filter(e => new Date(e.start).toDateString() === todayStr).map(e => ({ facility: f, event: e })); });
+    const upcomingByFacility = facilities.map(f => {
+      const events = calendarEvents[f.id] || [];
+      const futureEvents = events.filter(e => new Date(e.start) > new Date()).sort((a, b) => new Date(a.start) - new Date(b.start));
+      return futureEvents.length > 0 ? { facility: f, event: futureEvents[0] } : null;
+    }).filter(Boolean);
     const formattedToday = new Date().toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'long' });
     return (
       <div className="space-y-8 py-6">
