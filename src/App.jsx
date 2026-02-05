@@ -351,7 +351,7 @@ export default function App() {
     if (!facility.icalUrl) return;
     setIsSyncing(true);
     try {
-      const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(facility.icalUrl)}`);
+      const res = await fetch(`/api/ical-proxy?url=${encodeURIComponent(facility.icalUrl)}`);
       if (!res.ok) throw new Error('Fetch failed');
       const data = await res.text();
       setCalendarEvents(prev => ({ ...prev, [facility.id]: parseIcal(data) }));
