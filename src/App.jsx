@@ -324,7 +324,7 @@ export default function App() {
   const renderFacilityDetail = () => {
     const rawEvents = (selectedFacilityId && calendarEvents[selectedFacilityId]) || [];
     const now = new Date(); const limit = new Date(); limit.setDate(now.getDate() + 14);
-    const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+    const todayStart = new Date(now); todayStart.setHours(0,0,0,0); const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1); const dayAfterStart = new Date(todayStart); dayAfterStart.setDate(dayAfterStart.getDate() + 2);
     const filtered = rawEvents.filter(event => {
       const eDate = new Date(event.start);
       const isDone = selections.some(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.isCompleted);
