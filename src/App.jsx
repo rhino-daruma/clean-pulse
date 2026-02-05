@@ -213,16 +213,27 @@ export default function App() {
     if (!selectedFacilityId) return;
     const existing = selections.find(s => s.eventId === eventId && s.staffId === staffId && s.facilityId === selectedFacilityId);
     if (existing?.status === 'available') {
+      // 選択解除
       if (existing.dbId) await supabase.from('selections').delete().eq('id', existing.dbId);
       setSelections(prev => prev.filter(s => !(s.eventId === eventId && s.staffId === staffId && s.facilityId === selectedFacilityId)));
     } else {
+      // 既存の他のスタッフ割り当てを削除
+      const existingOther = selections.find(s => s.eventId === eventId && s.facilityId === selectedFacilityId && s.staffId !== staffId && !s.isCompleted);
+      if (existingOther?.dbId) {
+        await supabase.from('selections').delete().eq('id', existingOther.dbId);
+        setSelections(prev => prev.filter(s => s.dbId !== existingOther.dbId));
+      }
+      // 新しく割り当て
       const { data } = await supabase.from('selections').insert({ facility_id: selectedFacilityId, event_id: eventId, staff_id: staffId, status: 'available' }).select().single();
       if (data) setSelections(prev => [...prev, { dbId: data.id, facilityId: data.facility_id, eventId: data.event_id, staffId: data.staff_id, status: data.status, isCompleted: data.is_completed, completedAt: data.completed_at, rating: data.rating, reportText: data.report_text, reportImages: data.report_images || [], isVerified: data.is_verified }]);
     }
   };
 
+  const [isReporting, setIsReporting] = useState(false);
+
   const submitReport = async () => {
-    if (!reportingTask || !selectedFacilityId) return;
+    if (!reportingTask || !selectedFacilityId || isReporting) return;
+    setIsReporting(true);
     const existing = selections.find(s => s.eventId === reportingTask.eventId && s.staffId === reportingTask.staffId && s.facilityId === selectedFacilityId);
     const reportData = { is_completed: true, completed_at: new Date().toISOString(), rating: reportRating, report_text: reportText, report_images: reportImages, is_verified: false };
     if (existing?.dbId) {
@@ -233,6 +244,8 @@ export default function App() {
       if (data) setSelections(prev => [...prev, { dbId: data.id, facilityId: data.facility_id, eventId: data.event_id, staffId: data.staff_id, status: data.status, isCompleted: true, completedAt: data.completed_at, rating: data.rating, reportText: data.report_text, reportImages: data.report_images || [], isVerified: false }]);
     }
     setReportingTask(null); setReportRating('normal'); setReportText(''); setReportImages([]);
+    setIsReporting(false);
+    alert('報告が完了しました');
   };
 
   const toggleVerify = async (eventId, staffId, facilityId) => {
@@ -241,6 +254,14 @@ export default function App() {
     const nv = !sel.isVerified;
     await supabase.from('selections').update({ is_verified: nv }).eq('id', sel.dbId);
     setSelections(prev => prev.map(s => (s.eventId === eventId && s.staffId === staffId && s.facilityId === facilityId) ? { ...s, isVerified: nv } : s));
+  };
+
+  const revertCompletion = async (eventId, staffId, facilityId) => {
+    if (!confirm('この清掃報告を未完了に戻しますか？')) return;
+    const sel = selections.find(s => s.eventId === eventId && s.staffId === staffId && s.facilityId === facilityId);
+    if (!sel?.dbId) return;
+    await supabase.from('selections').update({ is_completed: false, completed_at: null, rating: null, report_text: null, report_images: null, is_verified: false }).eq('id', sel.dbId);
+    setSelections(prev => prev.map(s => (s.eventId === eventId && s.staffId === staffId && s.facilityId === facilityId) ? { ...s, isCompleted: false, completedAt: null, rating: null, reportText: null, reportImages: [], isVerified: false } : s));
   };
 
   const handleImageUpload = (e) => {
@@ -427,7 +448,7 @@ export default function App() {
                             <div key={idx} className="bg-slate-50 p-5 rounded-xl space-y-3 border border-slate-100">
                               <div className="flex justify-between items-center">
                                 <div><p className="text-xs font-bold text-slate-700">担当: {staffList.find(st => st.id === s.staffId)?.name}</p><p className="text-xs text-slate-400 mt-1">完了: {new Date(s.completedAt || '').toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p></div>
-                                {isAdmin && <button onClick={(e) => { e.stopPropagation(); toggleVerify(event.id, s.staffId, selectedFacilityId); }} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${s.isVerified ? 'bg-green-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>{s.isVerified ? '確認済み' : '確認する'}</button>}
+                                {isAdmin && <div className="flex gap-2"><button onClick={(e) => { e.stopPropagation(); toggleVerify(event.id, s.staffId, selectedFacilityId); }} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${s.isVerified ? 'bg-green-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>{s.isVerified ? '確認済み' : '確認する'}</button><button onClick={(e) => { e.stopPropagation(); revertCompletion(event.id, s.staffId, selectedFacilityId); }} className="px-3 py-2 rounded-full text-xs font-bold bg-white text-red-400 border border-red-200 hover:bg-red-50">戻す</button></div>}
                               </div>
                               <div className="flex items-center gap-1.5 text-xs font-bold text-yellow-600 bg-yellow-50 w-fit px-3 py-1 rounded-lg"><StarIcon className="w-3.5 h-3.5" /> ゲスト: {RATING_LABELS[s.rating || 'normal']}</div>
                               {s.reportText && <p className="text-xs text-slate-700 bg-white p-4 rounded-xl border border-slate-100">{s.reportText}</p>}
@@ -510,7 +531,7 @@ export default function App() {
             <section className="space-y-3"><label className="text-xs font-bold text-slate-400">ゲストの利用品質</label><div className="grid grid-cols-4 gap-2">{['worst', 'dirty', 'normal', 'clean'].map(r => (<button key={r} onClick={() => setReportRating(r)} className={`py-4 rounded-xl text-xs font-bold border transition-all ${reportRating === r ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>{RATING_LABELS[r]}</button>))}</div></section>
             <section className="space-y-3"><label className="text-xs font-bold text-slate-400">清掃後写真 (最大10枚)</label><div className="flex flex-wrap gap-3"><label className="w-20 h-20 flex items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-300"><CameraIcon className="w-8 h-8" /><input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} /></label>{reportImages.map((img, i) => (<div key={i} className="relative w-20 h-20"><img src={img} className="w-full h-full object-cover rounded-xl" alt="" /><button onClick={() => setReportImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg"><XCircleIcon className="w-3.5 h-3.5" /></button></div>))}</div></section>
             <section className="space-y-3"><label className="text-xs font-bold text-slate-400">特記事項</label><textarea className="w-full h-28 p-4 text-sm bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-blue-500/20 resize-none" placeholder="忘れ物、備品不足など..." value={reportText} onChange={e => setReportText(e.target.value)} /></section>
-            <button onClick={submitReport} className="w-full py-5 bg-blue-600 text-white font-bold rounded-xl shadow-xl active:scale-[0.98]">報告を送信する</button>
+            <button onClick={submitReport} disabled={isReporting} className="w-full py-5 bg-blue-600 text-white font-bold rounded-xl shadow-xl active:scale-[0.98] disabled:bg-slate-300">{isReporting ? '送信中...' : '報告を送信する'}</button>
           </div>
         </div>
       </div>
