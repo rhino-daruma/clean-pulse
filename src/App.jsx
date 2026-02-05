@@ -331,6 +331,9 @@ export default function App() {
       return facilityTab === 'next14' ? (!isDone && eDate >= todayStart && eDate <= limit) : isDone;
     });
     const sorted = [...filtered].sort((a, b) => facilityTab === 'next14' ? new Date(a.start) - new Date(b.start) : new Date(b.start) - new Date(a.start));
+    const todayEvents = sorted.filter(e => { const d = new Date(e.start); d.setHours(0,0,0,0); return d.getTime() === todayStart.getTime(); });
+    const tomorrowEvents = sorted.filter(e => { const d = new Date(e.start); d.setHours(0,0,0,0); return d.getTime() === tomorrowStart.getTime(); });
+    const laterEvents = sorted.filter(e => { const d = new Date(e.start); d.setHours(0,0,0,0); return d >= dayAfterStart; });
     return (
       <div className="space-y-6 pb-20 pt-2">
         <div className="flex items-center justify-between">
