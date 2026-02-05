@@ -211,18 +211,21 @@ export default function App() {
 
   const toggleAttendance = async (eventId, staffId) => {
     if (!selectedFacilityId) return;
-    const existing = selections.find(s => s.eventId === eventId && s.staffId === staffId && s.facilityId === selectedFacilityId);
-    if (existing?.status === 'available') {
+    const existing = selections.find(s => s.eventId === eventId && s.staffId === staffId && s.facilityId === selectedFacilityId && !s.isCompleted);
+    if (existing) {
       // 選択解除
       if (existing.dbId) await supabase.from('selections').delete().eq('id', existing.dbId);
-      setSelections(prev => prev.filter(s => !(s.eventId === eventId && s.staffId === staffId && s.facilityId === selectedFacilityId)));
+      setSelections(prev => prev.filter(s => s.dbId !== existing.dbId));
     } else {
-      // 既存の他のスタッフ割り当てを削除
-      const existingOther = selections.find(s => s.eventId === eventId && s.facilityId === selectedFacilityId && s.staffId !== staffId && !s.isCompleted);
-      if (existingOther?.dbId) {
-        await supabase.from('selections').delete().eq('id', existingOther.dbId);
-        setSelections(prev => prev.filter(s => s.dbId !== existingOther.dbId));
+      // 既に同じスタッフが登録されていないか確認
+      const alreadyExists = selections.some(s => s.eventId === eventId && s.staffId === staffId && s.facilityId === selectedFacilityId);
+      if (alreadyExists) return;
+      // 既存の他のスタッフ割り当てを全て削除
+      const existingOthers = selections.filter(s => s.eventId === eventId && s.facilityId === selectedFacilityId && s.staffId !== staffId && !s.isCompleted);
+      for (const other of existingOthers) {
+        if (other.dbId) await supabase.from('selections').delete().eq('id', other.dbId);
       }
+      setSelections(prev => prev.filter(s => !(s.eventId === eventId && s.facilityId === selectedFacilityId && s.staffId !== staffId && !s.isCompleted)));
       // 新しく割り当て
       const { data } = await supabase.from('selections').insert({ facility_id: selectedFacilityId, event_id: eventId, staff_id: staffId, status: 'available' }).select().single();
       if (data) setSelections(prev => [...prev, { dbId: data.id, facilityId: data.facility_id, eventId: data.event_id, staffId: data.staff_id, status: data.status, isCompleted: data.is_completed, completedAt: data.completed_at, rating: data.rating, reportText: data.report_text, reportImages: data.report_images || [], isVerified: data.is_verified }]);
