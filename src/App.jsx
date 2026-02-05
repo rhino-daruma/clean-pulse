@@ -419,7 +419,7 @@ export default function App() {
       </section>
       <div className="space-y-3 pb-20">
         <h3 className="text-xs font-bold text-slate-400 pl-1">登録済み ({facilities.length})</h3>
-        {facilities.map(f => (<div key={f.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm"><p className="font-bold text-slate-800 truncate pr-4">{f.name}</p><div className="flex gap-1 flex-shrink-0"><button onClick={() => startEditingFacility(f)} className="p-3 text-slate-400 hover:text-blue-600"><PencilIcon className="w-5 h-5"/></button><button onClick={() => removeFacility(f.id)} className="p-3 text-red-400 hover:text-red-600"><TrashIcon className="w-5 h-5"/></button></div></div>))}
+        {facilities.map(f => (<div key={f.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm"><p className="font-bold text-slate-800 truncate pr-4">{f.name}</p><div className="flex gap-1 flex-shrink-0"><button onClick={() => { setSelectedFacilityId(f.id); setView('facility_detail'); }} className="p-3 text-blue-400 hover:text-blue-600"><CalendarIcon className="w-5 h-5"/></button><button onClick={() => startEditingFacility(f)} className="p-3 text-slate-400 hover:text-blue-600"><PencilIcon className="w-5 h-5"/></button><button onClick={() => removeFacility(f.id)} className="p-3 text-red-400 hover:text-red-600"><TrashIcon className="w-5 h-5"/></button></div></div>))}
       </div>
     </div>
   );
