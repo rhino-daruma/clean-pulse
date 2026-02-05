@@ -338,7 +338,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button onClick={() => currentFacility && currentFacility.icalUrl && syncFacilityCalendar(currentFacility)} className={`p-2.5 rounded-xl bg-white border border-slate-100 shadow-sm ${isSyncing ? 'animate-spin text-blue-500' : 'text-slate-400'}`}><RefreshIcon className="w-5 h-5" /></button>
             {currentFacility?.inventoryUrl && <a href={currentFacility.inventoryUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-blue-50 text-blue-600 rounded-xl border border-blue-100"><ClipboardIcon className="w-5 h-5" /></a>}
-            {currentFacility?.manualUrl && <a href={currentFacility.manualUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-green-50 text-green-600 rounded-xl border border-green-100"><BookOpenIcon className="w-5 h-5" /></a>}
+            {currentFacility?.manualUrl && <a href={currentFacility.manualUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-green-50 text-green-600 rounded-xl border border-green-100"><BookOpenIcon className="w-5 h-5" /></a>}{isAdmin && <button onClick={() => { startEditingFacility(currentFacility); setView('facility_settings'); }} className="p-2.5 bg-slate-50 text-slate-400 hover:text-blue-600 rounded-xl border border-slate-100"><PencilIcon className="w-5 h-5" /></button>}
           </div>
         </div>
         <div className="flex p-1.5 bg-slate-100 rounded-xl">
