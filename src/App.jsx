@@ -130,7 +130,7 @@ export default function App() {
   useEffect(() => {
     if (authPhase !== 'app') return;
     const loadData = async () => {
-      const { data: staffData } = await supabase.from('users').select('*').eq('role', 'staff');
+      const { data: staffData } = await supabase.from('users').select('*');
       if (staffData) setStaffList(staffData.map(u => ({ id: u.line_id, name: u.line_name })));
       const { data: facData } = await supabase.from('facilities').select('*').order('created_at', { ascending: true });
       if (facData) setFacilities(facData.map(f => ({ id: f.id, name: f.name, icalUrl: f.ical_url || '', inventoryUrl: f.inventory_url || '', manualUrl: f.manual_url || '' })));
