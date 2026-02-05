@@ -432,7 +432,7 @@ export default function App() {
     } else {
       const id = `f${Date.now()}`;
       setFacilities([...facilities, { id, name: newFacilityName.trim(), calendarId: '', icalUrl: newIcalUrl.trim(), inventoryUrl: newInventoryUrl.trim(), manualUrl: newManualUrl.trim() }]);
-      setCalendarEvents(prev => ({ ...prev, [id]: generateSampleEvents(id) }));
+      if (!newIcalUrl.trim()) { setCalendarEvents(prev => ({ ...prev, [id]: generateSampleEvents(id) })); }
     }
     setNewFacilityName(''); setNewIcalUrl(''); setNewInventoryUrl(''); setNewManualUrl('');
   };
