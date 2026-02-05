@@ -34,7 +34,7 @@ const LineIcon = ({ className = "w-6 h-6" }) => (
 );
 
 const LINE_CHANNEL_ID = '2008788577';
-const RATING_LABELS = { worst: '\u6700\u60aa', dirty: '\u6c5a\u3044', normal: '\u666e\u901a', clean: '\u7dba\u9e97' };
+const RATING_LABELS = { worst: '最悪', dirty: '汚い', normal: '普通', clean: '綺麗' };
 
 function getLineLoginUrl() {
   const baseUrl = window.location.origin;
@@ -108,21 +108,21 @@ export default function App() {
     setIsSubmitting(true); setInviteError('');
     try {
       const { data: codeData, error: codeError } = await supabase.from('invite_codes').select('*').eq('code', inviteCode.trim()).single();
-      if (codeError || !codeData) { setInviteError('\u7121\u52b9\u306a\u62db\u5f85\u30b3\u30fc\u30c9\u3067\u3059'); setIsSubmitting(false); return; }
+      if (codeError || !codeData) { setInviteError('無効な招待コードです'); setIsSubmitting(false); return; }
       const { data: userData, error: userError } = await supabase.from('users').insert({ line_id: lineProfile.line_id, line_name: lineProfile.line_name, line_picture_url: lineProfile.line_picture, role: codeData.role }).select().single();
       if (userError) {
         if (userError.code === '23505') {
           const { data: existing } = await supabase.from('users').select('*').eq('line_id', lineProfile.line_id).single();
           if (existing) { setCurrentUser(existing); setAuthPhase('app'); return; }
         }
-        setInviteError('\u767b\u9332\u306b\u5931\u6557\u3057\u307e\u3057\u305f'); setIsSubmitting(false); return;
+        setInviteError('登録に失敗しました'); setIsSubmitting(false); return;
       }
       setCurrentUser(userData); setAuthPhase('app');
-    } catch (err) { setInviteError('\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f'); } finally { setIsSubmitting(false); }
+    } catch (err) { setInviteError('エラーが発生しました'); } finally { setIsSubmitting(false); }
   };
 
   const handleLogout = () => {
-    if (confirm('\u30ed\u30b0\u30a2\u30a6\u30c8\u3057\u307e\u3059\u304b\uff1f')) {
+    if (confirm('ログアウトしますか？')) {
       localStorage.removeItem('line_profile'); setCurrentUser(null); setLineProfile(null); setAuthPhase('login'); setView('top');
     }
   };
@@ -142,8 +142,8 @@ export default function App() {
 
   const getDayLabel = (dateStr) => {
     const d = new Date(dateStr); const today = new Date(); const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
-    if (d.toDateString() === today.toDateString()) return '\u672c\u65e5';
-    if (d.toDateString() === tomorrow.toDateString()) return '\u660e\u65e5';
+    if (d.toDateString() === today.toDateString()) return '本日';
+    if (d.toDateString() === tomorrow.toDateString()) return '明日';
     return null;
   };
 
@@ -155,7 +155,7 @@ export default function App() {
     const blocks = unfolded.split('BEGIN:VEVENT');
     for (let i = 1; i < blocks.length; i++) {
       const b = blocks[i];
-      const summary = b.match(/SUMMARY:(.*)/)?.[1]?.trim().replace(/\\n/gi, '\n').replace(/\\,/g, ',') || '\u4e88\u5b9a';
+      const summary = b.match(/SUMMARY:(.*)/)?.[1]?.trim().replace(/\\n/gi, '\n').replace(/\\,/g, ',') || '予定';
       const dtMatch = b.match(/DTSTART[:;](?:VALUE=DATE:)?(\d{8}T\d{6}Z?|\d{8})/);
       const uid = b.match(/UID:(.*)/)?.[1]?.trim() || Math.random().toString();
       const desc = b.match(/DESCRIPTION:(.*)/)?.[1]?.trim().replace(/\\n/gi, '\n').replace(/\\,/g, ',') || '';
@@ -253,7 +253,7 @@ export default function App() {
   };
 
   const startEditingFacility = (f) => { setEditingFacilityId(f.id); setNewFacilityName(f.name); setNewIcalUrl(f.icalUrl || ''); setNewInventoryUrl(f.inventoryUrl || ''); setNewManualUrl(f.manualUrl || ''); };
-  const removeFacility = async (id) => { if (confirm('\u65bd\u8a2d\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f')) { await supabase.from('facilities').delete().eq('id', id); setFacilities(prev => prev.filter(f => f.id !== id)); } };
+  const removeFacility = async (id) => { if (confirm('施設を削除しますか？')) { await supabase.from('facilities').delete().eq('id', id); setFacilities(prev => prev.filter(f => f.id !== id)); } };
   const currentFacility = useMemo(() => facilities.find(f => f.id === selectedFacilityId), [facilities, selectedFacilityId]);
   const currentStaff = useMemo(() => staffList.find(s => s.id === selectedStaffId), [staffList, selectedStaffId]);
 
@@ -264,22 +264,22 @@ export default function App() {
       <div className="w-24 h-24 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-2xl mb-10 animate-pulse"><CalendarIcon className="w-12 h-12" /></div>
       <h1 className="text-3xl font-black tracking-tight mb-2">CLEAN PULSE</h1>
       <p className="text-sm text-slate-400 font-bold mb-16 uppercase tracking-widest">Smart Cleaning Logic</p>
-      <button onClick={handleLineLogin} className="w-full max-w-sm flex items-center justify-center gap-4 py-5 rounded-2xl font-bold text-white shadow-2xl bg-[#06C755] hover:bg-[#05b14c] transition-all active:scale-[0.97]"><LineIcon className="w-7 h-7" />LINE\u3067\u30ed\u30b0\u30a4\u30f3</button>
+      <button onClick={handleLineLogin} className="w-full max-w-sm flex items-center justify-center gap-4 py-5 rounded-2xl font-bold text-white shadow-2xl bg-[#06C755] hover:bg-[#05b14c] transition-all active:scale-[0.97]"><LineIcon className="w-7 h-7" />LINEでログイン</button>
     </div>
   );
 
   if (authPhase === 'invite_code') return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center">
       <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-2xl mb-8"><CalendarIcon className="w-10 h-10" /></div>
-      <h2 className="text-2xl font-black mb-2">\u3088\u3046\u3053\u305d\uff01</h2>
-      <p className="text-sm text-slate-500 mb-2">{lineProfile?.line_name} \u3055\u3093</p>
-      <p className="text-xs text-slate-400 mb-10">\u62db\u5f85\u30b3\u30fc\u30c9\u3092\u5165\u529b\u3057\u3066\u767b\u9332\u3092\u5b8c\u4e86\u3057\u3066\u304f\u3060\u3055\u3044</p>
+      <h2 className="text-2xl font-black mb-2">ようこそ！</h2>
+      <p className="text-sm text-slate-500 mb-2">{lineProfile?.line_name} さん</p>
+      <p className="text-xs text-slate-400 mb-10">招待コードを入力して登録を完了してください</p>
       <form onSubmit={handleInviteSubmit} className="w-full max-w-sm space-y-4">
-        <input type="text" value={inviteCode} onChange={(e) => { setInviteCode(e.target.value); setInviteError(''); }} placeholder="\u62db\u5f85\u30b3\u30fc\u30c9\u3092\u5165\u529b" className="w-full text-center text-lg py-5 px-6 rounded-2xl bg-slate-50 border-2 border-slate-200 font-bold focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" autoFocus />
+        <input type="text" value={inviteCode} onChange={(e) => { setInviteCode(e.target.value); setInviteError(''); }} placeholder="招待コードを入力" className="w-full text-center text-lg py-5 px-6 rounded-2xl bg-slate-50 border-2 border-slate-200 font-bold focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all" autoFocus />
         {inviteError && <p className="text-sm text-red-500 font-bold">{inviteError}</p>}
-        <button type="submit" disabled={!inviteCode.trim() || isSubmitting} className="w-full py-5 bg-blue-600 text-white text-base font-bold rounded-2xl shadow-xl hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-slate-300 disabled:shadow-none">{isSubmitting ? <span className="flex items-center justify-center gap-3"><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>\u78ba\u8a8d\u4e2d...</span> : '\u767b\u9332\u3059\u308b'}</button>
+        <button type="submit" disabled={!inviteCode.trim() || isSubmitting} className="w-full py-5 bg-blue-600 text-white text-base font-bold rounded-2xl shadow-xl hover:bg-blue-700 active:scale-[0.98] transition-all disabled:bg-slate-300 disabled:shadow-none">{isSubmitting ? <span className="flex items-center justify-center gap-3"><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>確認中...</span> : '登録する'}</button>
       </form>
-      <button onClick={() => { localStorage.removeItem('line_profile'); setAuthPhase('login'); }} className="mt-8 text-xs text-slate-400 underline">\u5225\u306e\u30a2\u30ab\u30a6\u30f3\u30c8\u3067\u30ed\u30b0\u30a4\u30f3</button>
+      <button onClick={() => { localStorage.removeItem('line_profile'); setAuthPhase('login'); }} className="mt-8 text-xs text-slate-400 underline">別のアカウントでログイン</button>
     </div>
   );
 
@@ -292,18 +292,18 @@ export default function App() {
         <section className="bg-white border border-slate-100 rounded-3xl p-8 shadow-xl">
           <div className="flex flex-col mb-8"><span className="text-xs text-blue-600 font-bold tracking-widest uppercase mb-2">Today</span><h3 className="text-2xl font-black text-slate-900 tracking-tight">{formattedToday}</h3></div>
           <div className="space-y-4">
-            {todaySchedules.length === 0 ? (<div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">\u672c\u65e5\u306e\u6e05\u6383\u4e88\u5b9a\u306f\u3042\u308a\u307e\u305b\u3093</p></div>) : todaySchedules.map(({ facility, event }, i) => {
+            {todaySchedules.length === 0 ? (<div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">本日の清掃予定はありません</p></div>) : todaySchedules.map(({ facility, event }, i) => {
               const assigned = selections.find(s => s.facilityId === facility.id && s.eventId === event.id && s.status === 'available');
               const staff = assigned ? staffList.find(sl => sl.id === assigned.staffId) : null;
-              return (<button key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); setFacilityTab('next14'); }} className="w-full text-left flex flex-col p-5 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-white transition-all active:scale-[0.98] shadow-sm"><div className="flex justify-between items-center mb-2 w-full"><span className="text-xs font-bold text-blue-600 uppercase">{facility.name}</span><span className={`text-xs font-bold px-3 py-1 rounded-full border ${staff ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>{staff ? staff.name : '\u672a\u5272\u5f53'}</span></div><p className="text-base font-bold text-slate-800 truncate">{event.title}</p></button>);
+              return (<button key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); setFacilityTab('next14'); }} className="w-full text-left flex flex-col p-5 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-white transition-all active:scale-[0.98] shadow-sm"><div className="flex justify-between items-center mb-2 w-full"><span className="text-xs font-bold text-blue-600 uppercase">{facility.name}</span><span className={`text-xs font-bold px-3 py-1 rounded-full border ${staff ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>{staff ? staff.name : '未割当'}</span></div><p className="text-base font-bold text-slate-800 truncate">{event.title}</p></button>);
             })}
           </div>
         </section>
         <div className="grid grid-cols-1 gap-4">
-          <button onClick={() => setView('facility_list')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all"><HomeIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">\u6e05\u6383\u30b9\u30b1\u30b8\u30e5\u30fc\u30eb</p><p className="text-xs text-slate-400">\u65bd\u8a2d\u3054\u3068\u306e\u4e88\u5b9a\u7ba1\u7406</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
+          <button onClick={() => setView('facility_list')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all"><HomeIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">清掃スケジュール</p><p className="text-xs text-slate-400">施設ごとの予定管理</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
           {isAdmin && (<>
-            <button onClick={() => setView('staff_list')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-green-50 rounded-xl text-green-600 group-hover:bg-green-600 group-hover:text-white transition-all"><UserGroupIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">\u30b9\u30bf\u30c3\u30d5\u7ba1\u7406</p><p className="text-xs text-slate-400">\u767b\u9332\u30b9\u30bf\u30c3\u30d5\u306e\u78ba\u8a8d</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
-            <button onClick={() => setView('facility_settings')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-slate-100 rounded-xl text-slate-600 group-hover:bg-slate-900 group-hover:text-white transition-all"><PlusIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">\u65bd\u8a2d\u8a2d\u5b9a</p><p className="text-xs text-slate-400">\u65bd\u8a2d\u306e\u8ffd\u52a0\u30fb\u7de8\u96c6</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
+            <button onClick={() => setView('staff_list')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-green-50 rounded-xl text-green-600 group-hover:bg-green-600 group-hover:text-white transition-all"><UserGroupIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">スタッフ管理</p><p className="text-xs text-slate-400">登録スタッフの確認</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
+            <button onClick={() => setView('facility_settings')} className="flex items-center justify-between p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-lg transition-all group text-left active:scale-[0.98]"><div className="flex items-center gap-4"><div className="p-3 bg-slate-100 rounded-xl text-slate-600 group-hover:bg-slate-900 group-hover:text-white transition-all"><PlusIcon className="w-6 h-6" /></div><div><p className="font-bold text-slate-800">施設設定</p><p className="text-xs text-slate-400">施設の追加・編集</p></div></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
           </>)}
         </div>
       </div>
@@ -312,10 +312,10 @@ export default function App() {
 
   const renderFacilityList = () => (
     <div className="space-y-6 py-4">
-      <div className="flex items-center gap-4"><button onClick={() => setView('top')} className="p-2 hover:bg-slate-100 rounded-xl transition-all"><ArrowLeftIcon className="w-6 h-6"/></button><h2 className="text-xl font-bold">\u65bd\u8a2d\u3092\u9078\u629e</h2></div>
+      <div className="flex items-center gap-4"><button onClick={() => setView('top')} className="p-2 hover:bg-slate-100 rounded-xl transition-all"><ArrowLeftIcon className="w-6 h-6"/></button><h2 className="text-xl font-bold">施設を選択</h2></div>
       <div className="grid gap-4">
-        {facilities.length === 0 ? (<div className="py-20 text-center bg-white border border-dashed border-slate-200 rounded-2xl"><p className="text-xs text-slate-400 font-bold mb-4">\u65bd\u8a2d\u304c\u767b\u9332\u3055\u308c\u3066\u3044\u307e\u305b\u3093</p>{isAdmin && <button onClick={() => setView('facility_settings')} className="text-sm font-bold text-blue-600 underline">\u65bd\u8a2d\u3092\u8ffd\u52a0</button>}</div>) : facilities.map(f => (
-          <button key={f.id} onClick={() => { setSelectedFacilityId(f.id); setView('facility_detail'); setFacilityTab('next14'); }} className="w-full p-6 bg-white border border-slate-100 rounded-2xl shadow-sm flex justify-between items-center active:scale-[0.98] transition-all hover:shadow-lg group"><div className="flex flex-col text-left"><span className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{f.name}</span><span className="text-xs text-slate-400 mt-1">\u30b9\u30b1\u30b8\u30e5\u30fc\u30eb\u3092\u78ba\u8a8d</span></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
+        {facilities.length === 0 ? (<div className="py-20 text-center bg-white border border-dashed border-slate-200 rounded-2xl"><p className="text-xs text-slate-400 font-bold mb-4">施設が登録されていません</p>{isAdmin && <button onClick={() => setView('facility_settings')} className="text-sm font-bold text-blue-600 underline">施設を追加</button>}</div>) : facilities.map(f => (
+          <button key={f.id} onClick={() => { setSelectedFacilityId(f.id); setView('facility_detail'); setFacilityTab('next14'); }} className="w-full p-6 bg-white border border-slate-100 rounded-2xl shadow-sm flex justify-between items-center active:scale-[0.98] transition-all hover:shadow-lg group"><div className="flex flex-col text-left"><span className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{f.name}</span><span className="text-xs text-slate-400 mt-1">スケジュールを確認</span></div><ChevronDownIcon className="w-5 h-5 -rotate-90 text-slate-300" /></button>
         ))}
       </div>
     </div>
@@ -342,11 +342,11 @@ export default function App() {
           </div>
         </div>
         <div className="flex p-1.5 bg-slate-100 rounded-xl">
-          <button onClick={() => setFacilityTab('next14')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'next14' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>\u4eca\u5f8c14\u65e5\u9593</button>
-          <button onClick={() => setFacilityTab('completed')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'completed' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>\u6e05\u6383\u5b8c\u4e86</button>
+          <button onClick={() => setFacilityTab('next14')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'next14' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>今後14日間</button>
+          <button onClick={() => setFacilityTab('completed')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'completed' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>清掃完了</button>
         </div>
         <div className="space-y-4">
-          {sorted.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">{facilityTab === 'next14' ? (currentFacility?.icalUrl ? '\u4eca\u5f8c14\u65e5\u9593\u306e\u4e88\u5b9a\u306f\u3042\u308a\u307e\u305b\u3093' : 'iCal URL\u304c\u672a\u8a2d\u5b9a\u3067\u3059') : '\u5b8c\u4e86\u3057\u305f\u6e05\u6383\u306f\u3042\u308a\u307e\u305b\u3093'}</p></div>) : sorted.map(event => {
+          {sorted.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">{facilityTab === 'next14' ? (currentFacility?.icalUrl ? '今後14日間の予定はありません' : 'iCal URLが未設定です') : '完了した清掃はありません'}</p></div>) : sorted.map(event => {
             const date = new Date(event.start); const dayLabel = getDayLabel(event.start);
             const isExpanded = expandedEventId === event.id;
             const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
@@ -359,7 +359,7 @@ export default function App() {
                   <div className="p-5 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : event.id)}>
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-500">{date.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span>
-                      {facilityTab === 'next14' ? (assigned.length > 0 ? assigned.map(a => <span key={a.staffId} className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">{staffList.find(s => s.id === a.staffId)?.name}</span>) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">\u672a\u5272\u5f53</span>) : <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${isFullyVerified ? 'bg-green-100 text-green-600 border-green-200' : 'bg-yellow-100 text-yellow-600 border-yellow-200'}`}>{isFullyVerified ? '\u78ba\u8a8d\u6e08' : '\u672a\u78ba\u8a8d'}</span>}
+                      {facilityTab === 'next14' ? (assigned.length > 0 ? assigned.map(a => <span key={a.staffId} className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">{staffList.find(s => s.id === a.staffId)?.name}</span>) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">未割当</span>) : <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${isFullyVerified ? 'bg-green-100 text-green-600 border-green-200' : 'bg-yellow-100 text-yellow-600 border-yellow-200'}`}>{isFullyVerified ? '確認済' : '未確認'}</span>}
                     </div>
                     <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-800 truncate pr-6">{event.title}</h4><ChevronDownIcon className={`w-5 h-5 text-slate-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/></div>
                   </div>
@@ -367,13 +367,13 @@ export default function App() {
                     <div className="px-5 pb-6 border-t border-slate-50 pt-5 space-y-5">
                       {facilityTab === 'next14' ? (
                         <div className="space-y-4">
-                          {event.description && <div className="bg-slate-50 p-4 rounded-xl border border-slate-100"><p className="text-xs text-slate-400 font-bold mb-2">\u30ab\u30ec\u30f3\u30c0\u30fc\u8a73\u7d30</p><p className="text-xs text-slate-600 whitespace-pre-wrap">{event.description}</p></div>}
+                          {event.description && <div className="bg-slate-50 p-4 rounded-xl border border-slate-100"><p className="text-xs text-slate-400 font-bold mb-2">カレンダー詳細</p><p className="text-xs text-slate-600 whitespace-pre-wrap">{event.description}</p></div>}
                           <div className="space-y-3">
-                            <p className="text-xs text-slate-400 font-bold">\u62c5\u5f53\u30b9\u30bf\u30c3\u30d5\u3092\u9078\u629e</p>
+                            <p className="text-xs text-slate-400 font-bold">担当スタッフを選択</p>
                             <div className="flex flex-wrap gap-2">
                               {staffList.map(s => { const isSel = selections.some(sel => sel.eventId === event.id && sel.staffId === s.id && sel.facilityId === selectedFacilityId && sel.status === 'available'); return <button key={s.id} onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, s.id); }} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${isSel ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}>{s.name}</button>; })}
                             </div>
-                            {assigned.filter(a => !a.isCompleted).map(a => { const s = staffList.find(st => st.id === a.staffId); if (!s) return null; return <button key={s.id} onClick={(e) => { e.stopPropagation(); setReportingTask({ eventId: event.id, staffId: s.id }); }} className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 text-white text-sm font-bold rounded-xl shadow-lg active:scale-[0.98]"><CheckCircleIcon className="w-5 h-5" />{s.name} \u3068\u3057\u3066\u5b8c\u4e86\u5831\u544a</button>; })}
+                            {assigned.filter(a => !a.isCompleted).map(a => { const s = staffList.find(st => st.id === a.staffId); if (!s) return null; return <button key={s.id} onClick={(e) => { e.stopPropagation(); setReportingTask({ eventId: event.id, staffId: s.id }); }} className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 text-white text-sm font-bold rounded-xl shadow-lg active:scale-[0.98]"><CheckCircleIcon className="w-5 h-5" />{s.name} として完了報告</button>; })}
                           </div>
                         </div>
                       ) : (
@@ -381,10 +381,10 @@ export default function App() {
                           {completed.map((s, idx) => (
                             <div key={idx} className="bg-slate-50 p-5 rounded-xl space-y-3 border border-slate-100">
                               <div className="flex justify-between items-center">
-                                <div><p className="text-xs font-bold text-slate-700">\u62c5\u5f53: {staffList.find(st => st.id === s.staffId)?.name}</p><p className="text-xs text-slate-400 mt-1">\u5b8c\u4e86: {new Date(s.completedAt || '').toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p></div>
-                                {isAdmin && <button onClick={(e) => { e.stopPropagation(); toggleVerify(event.id, s.staffId, selectedFacilityId); }} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${s.isVerified ? 'bg-green-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>{s.isVerified ? '\u78ba\u8a8d\u6e08\u307f' : '\u78ba\u8a8d\u3059\u308b'}</button>}
+                                <div><p className="text-xs font-bold text-slate-700">担当: {staffList.find(st => st.id === s.staffId)?.name}</p><p className="text-xs text-slate-400 mt-1">完了: {new Date(s.completedAt || '').toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</p></div>
+                                {isAdmin && <button onClick={(e) => { e.stopPropagation(); toggleVerify(event.id, s.staffId, selectedFacilityId); }} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${s.isVerified ? 'bg-green-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>{s.isVerified ? '確認済み' : '確認する'}</button>}
                               </div>
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-yellow-600 bg-yellow-50 w-fit px-3 py-1 rounded-lg"><StarIcon className="w-3.5 h-3.5" /> \u30b2\u30b9\u30c8: {RATING_LABELS[s.rating || 'normal']}</div>
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-yellow-600 bg-yellow-50 w-fit px-3 py-1 rounded-lg"><StarIcon className="w-3.5 h-3.5" /> ゲスト: {RATING_LABELS[s.rating || 'normal']}</div>
                               {s.reportText && <p className="text-xs text-slate-700 bg-white p-4 rounded-xl border border-slate-100">{s.reportText}</p>}
                               {s.reportImages?.length > 0 && <div className="grid grid-cols-4 gap-2">{s.reportImages.map((img, i) => <div key={i} className="aspect-square overflow-hidden rounded-lg bg-slate-200 border border-slate-100"><img src={img} className="w-full h-full object-cover" alt="" /></div>)}</div>}
                             </div>
@@ -404,21 +404,21 @@ export default function App() {
 
   const renderFacilitySettings = () => (
     <div className="space-y-8 py-4">
-      <div className="flex items-center gap-4"><button onClick={() => setView('top')} className="p-2 hover:bg-slate-100 rounded-xl"><ArrowLeftIcon className="w-6 h-6"/></button><h2 className="text-xl font-bold">\u65bd\u8a2d\u8a2d\u5b9a</h2></div>
+      <div className="flex items-center gap-4"><button onClick={() => setView('top')} className="p-2 hover:bg-slate-100 rounded-xl"><ArrowLeftIcon className="w-6 h-6"/></button><h2 className="text-xl font-bold">施設設定</h2></div>
       <section className="bg-white p-6 rounded-2xl border border-slate-100 shadow-lg space-y-5">
-        <h3 className="text-xs font-bold text-slate-400 uppercase">{editingFacilityId ? '\u65bd\u8a2d\u3092\u7de8\u96c6' : '\u65b0\u898f\u65bd\u8a2d'}</h3>
+        <h3 className="text-xs font-bold text-slate-400 uppercase">{editingFacilityId ? '施設を編集' : '新規施設'}</h3>
         <form onSubmit={handleSaveFacility} className="space-y-4">
-          {[{ label: '\u65bd\u8a2d\u540d\u79f0', value: newFacilityName, set: setNewFacilityName, placeholder: '\u4f8b: \u65b0\u5bbf\u30c6\u30e9\u30b9 101\u53f7\u5ba4' },{ label: 'iCal URL', value: newIcalUrl, set: setNewIcalUrl, placeholder: 'Google\u30ab\u30ec\u30f3\u30c0\u30fc\u7b49\u306eiCal URL' },{ label: '\u88dc\u5145\u7528URL', value: newInventoryUrl, set: setNewInventoryUrl, placeholder: '\u5728\u5eab\u8868\u3078\u306e\u30ea\u30f3\u30af' },{ label: '\u30de\u30cb\u30e5\u30a2\u30ebURL', value: newManualUrl, set: setNewManualUrl, placeholder: '\u30de\u30cb\u30e5\u30a2\u30eb\u30ea\u30f3\u30af' }].map(({ label, value, set, placeholder }) => (
+          {[{ label: '施設名称', value: newFacilityName, set: setNewFacilityName, placeholder: '例: 新宿テラス 101号室' },{ label: 'iCal URL', value: newIcalUrl, set: setNewIcalUrl, placeholder: 'Googleカレンダー等のiCal URL' },{ label: '補充用URL', value: newInventoryUrl, set: setNewInventoryUrl, placeholder: '在庫表へのリンク' },{ label: 'マニュアルURL', value: newManualUrl, set: setNewManualUrl, placeholder: 'マニュアルリンク' }].map(({ label, value, set, placeholder }) => (
             <div key={label} className="space-y-1"><label className="text-xs font-bold text-slate-400 pl-1">{label}</label><input className="w-full text-sm p-4 rounded-xl bg-slate-50 border-none font-medium focus:ring-2 focus:ring-blue-500/20" value={value} onChange={e => set(e.target.value)} placeholder={placeholder} /></div>
           ))}
           <div className="flex gap-2 pt-2">
-            <button type="submit" className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-[0.98]">{editingFacilityId ? '\u66f4\u65b0' : '\u767b\u9332'}</button>
-            {editingFacilityId && <button type="button" onClick={() => { setEditingFacilityId(null); setNewFacilityName(''); setNewIcalUrl(''); setNewInventoryUrl(''); setNewManualUrl(''); }} className="px-6 bg-slate-100 rounded-xl font-bold text-slate-400">\u53d6\u6d88</button>}
+            <button type="submit" className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg active:scale-[0.98]">{editingFacilityId ? '更新' : '登録'}</button>
+            {editingFacilityId && <button type="button" onClick={() => { setEditingFacilityId(null); setNewFacilityName(''); setNewIcalUrl(''); setNewInventoryUrl(''); setNewManualUrl(''); }} className="px-6 bg-slate-100 rounded-xl font-bold text-slate-400">取消</button>}
           </div>
         </form>
       </section>
       <div className="space-y-3 pb-20">
-        <h3 className="text-xs font-bold text-slate-400 pl-1">\u767b\u9332\u6e08\u307f ({facilities.length})</h3>
+        <h3 className="text-xs font-bold text-slate-400 pl-1">登録済み ({facilities.length})</h3>
         {facilities.map(f => (<div key={f.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm"><p className="font-bold text-slate-800 truncate pr-4">{f.name}</p><div className="flex gap-1 flex-shrink-0"><button onClick={() => startEditingFacility(f)} className="p-3 text-slate-400 hover:text-blue-600"><PencilIcon className="w-5 h-5"/></button><button onClick={() => removeFacility(f.id)} className="p-3 text-red-400 hover:text-red-600"><TrashIcon className="w-5 h-5"/></button></div></div>))}
       </div>
     </div>
@@ -426,10 +426,10 @@ export default function App() {
 
   const renderStaffList = () => (
     <div className="space-y-8 py-4">
-      <div className="flex items-center gap-4"><button onClick={() => setView('top')} className="p-2 hover:bg-slate-100 rounded-xl"><ArrowLeftIcon className="w-6 h-6"/></button><h2 className="text-xl font-bold">\u30b9\u30bf\u30c3\u30d5\u7ba1\u7406</h2></div>
-      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-400 mb-3">\u30b9\u30bf\u30c3\u30d5\u306f\u62db\u5f85\u30b3\u30fc\u30c9 <span className="font-bold text-blue-600">jomostay-clean</span> \u3067LINE\u30ed\u30b0\u30a4\u30f3\u3059\u308b\u3068\u81ea\u52d5\u767b\u9332\u3055\u308c\u307e\u3059</p></div>
+      <div className="flex items-center gap-4"><button onClick={() => setView('top')} className="p-2 hover:bg-slate-100 rounded-xl"><ArrowLeftIcon className="w-6 h-6"/></button><h2 className="text-xl font-bold">スタッフ管理</h2></div>
+      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-400 mb-3">スタッフは招待コード <span className="font-bold text-blue-600">jomostay-clean</span> でLINEログインすると自動登録されます</p></div>
       <div className="grid gap-4 pb-20">
-        {staffList.length === 0 ? (<div className="py-16 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">\u307e\u3060\u30b9\u30bf\u30c3\u30d5\u304c\u767b\u9332\u3055\u308c\u3066\u3044\u307e\u305b\u3093</p></div>) : staffList.map(s => (
+        {staffList.length === 0 ? (<div className="py-16 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">まだスタッフが登録されていません</p></div>) : staffList.map(s => (
           <button key={s.id} onClick={() => { setSelectedStaffId(s.id); setView('staff_detail'); }} className="w-full p-5 bg-white border border-slate-100 rounded-2xl shadow-sm flex justify-between items-center group active:scale-[0.98]"><div className="flex items-center gap-4 text-left"><div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg font-bold">{s.name[0]}</div><span className="font-bold text-lg text-slate-800">{s.name}</span></div></button>
         ))}
       </div>
@@ -443,12 +443,12 @@ export default function App() {
       <div className="space-y-8 py-4">
         <div className="flex items-center gap-4"><button onClick={() => setView('staff_list')} className="p-2 hover:bg-slate-100 rounded-xl"><ArrowLeftIcon className="w-6 h-6"/></button><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-lg">{currentStaff?.name[0]}</div><h2 className="text-xl font-bold">{currentStaff?.name}</h2></div></div>
         <section className="space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 pl-1">\u4eca\u5f8c\u306e\u4e88\u5b9a ({upcomingSchedule.length})</h3>
-          {upcomingSchedule.length === 0 ? (<div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">\u4e88\u5b9a\u306a\u3057</p></div>) : upcomingSchedule.map(({ facility, event }, i) => (<button key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); setFacilityTab('next14'); setExpandedEventId(event.id); }} className="w-full text-left flex flex-col p-5 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-[0.98]"><div className="flex justify-between items-center mb-2 w-full"><span className="text-xs font-bold text-blue-600">{facility.name}</span><span className="text-xs text-slate-400">{new Date(event.start).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span></div><p className="text-sm font-bold text-slate-800 truncate">{event.title}</p></button>))}
+          <h3 className="text-xs font-bold text-slate-400 pl-1">今後の予定 ({upcomingSchedule.length})</h3>
+          {upcomingSchedule.length === 0 ? (<div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">予定なし</p></div>) : upcomingSchedule.map(({ facility, event }, i) => (<button key={i} onClick={() => { setSelectedFacilityId(facility.id); setView('facility_detail'); setFacilityTab('next14'); setExpandedEventId(event.id); }} className="w-full text-left flex flex-col p-5 bg-white rounded-xl border border-slate-100 shadow-sm active:scale-[0.98]"><div className="flex justify-between items-center mb-2 w-full"><span className="text-xs font-bold text-blue-600">{facility.name}</span><span className="text-xs text-slate-400">{new Date(event.start).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span></div><p className="text-sm font-bold text-slate-800 truncate">{event.title}</p></button>))}
         </section>
         <section className="space-y-4">
-          <h3 className="text-xs font-bold text-slate-400 pl-1">\u5b8c\u4e86\u5c65\u6b74 ({staffHistory.length})</h3>
-          {staffHistory.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">\u5c65\u6b74\u306a\u3057</p></div>) : staffHistory.map((h, i) => { const fac = facilities.find(f => f.id === h.facilityId); return <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"><span className="text-xs font-bold text-blue-600">{fac?.name || '\u524a\u9664\u6e08\u307f'}</span><p className="text-sm font-bold text-slate-800 mt-1">{new Date(h.completedAt || '').toLocaleDateString('ja-JP')} \u5b8c\u4e86</p></div>; })}
+          <h3 className="text-xs font-bold text-slate-400 pl-1">完了履歴 ({staffHistory.length})</h3>
+          {staffHistory.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">履歴なし</p></div>) : staffHistory.map((h, i) => { const fac = facilities.find(f => f.id === h.facilityId); return <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"><span className="text-xs font-bold text-blue-600">{fac?.name || '削除済み'}</span><p className="text-sm font-bold text-slate-800 mt-1">{new Date(h.completedAt || '').toLocaleDateString('ja-JP')} 完了</p></div>; })}
         </section>
       </div>
     );
@@ -461,11 +461,11 @@ export default function App() {
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-md">
         <div className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl">
           <div className="p-8 space-y-6 overflow-y-auto max-h-[92vh] pb-16">
-            <div className="flex items-center justify-between"><div><h3 className="text-xl font-bold">\u6e05\u6383\u5b8c\u4e86\u5831\u544a</h3><p className="text-xs text-slate-400 font-bold mt-1">\u62c5\u5f53: {staff?.name}</p></div><button onClick={() => setReportingTask(null)} className="p-3 bg-slate-50 rounded-full text-slate-400"><XCircleIcon className="w-7 h-7" /></button></div>
-            <section className="space-y-3"><label className="text-xs font-bold text-slate-400">\u30b2\u30b9\u30c8\u306e\u5229\u7528\u54c1\u8cea</label><div className="grid grid-cols-4 gap-2">{['worst', 'dirty', 'normal', 'clean'].map(r => (<button key={r} onClick={() => setReportRating(r)} className={`py-4 rounded-xl text-xs font-bold border transition-all ${reportRating === r ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>{RATING_LABELS[r]}</button>))}</div></section>
-            <section className="space-y-3"><label className="text-xs font-bold text-slate-400">\u6e05\u6383\u5f8c\u5199\u771f (\u6700\u592710\u679a)</label><div className="flex flex-wrap gap-3"><label className="w-20 h-20 flex items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-300"><CameraIcon className="w-8 h-8" /><input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} /></label>{reportImages.map((img, i) => (<div key={i} className="relative w-20 h-20"><img src={img} className="w-full h-full object-cover rounded-xl" alt="" /><button onClick={() => setReportImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg"><XCircleIcon className="w-3.5 h-3.5" /></button></div>))}</div></section>
-            <section className="space-y-3"><label className="text-xs font-bold text-slate-400">\u7279\u8a18\u4e8b\u9805</label><textarea className="w-full h-28 p-4 text-sm bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-blue-500/20 resize-none" placeholder="\u5fd8\u308c\u7269\u3001\u5099\u54c1\u4e0d\u8db3\u306a\u3069..." value={reportText} onChange={e => setReportText(e.target.value)} /></section>
-            <button onClick={submitReport} className="w-full py-5 bg-blue-600 text-white font-bold rounded-xl shadow-xl active:scale-[0.98]">\u5831\u544a\u3092\u9001\u4fe1\u3059\u308b</button>
+            <div className="flex items-center justify-between"><div><h3 className="text-xl font-bold">清掃完了報告</h3><p className="text-xs text-slate-400 font-bold mt-1">担当: {staff?.name}</p></div><button onClick={() => setReportingTask(null)} className="p-3 bg-slate-50 rounded-full text-slate-400"><XCircleIcon className="w-7 h-7" /></button></div>
+            <section className="space-y-3"><label className="text-xs font-bold text-slate-400">ゲストの利用品質</label><div className="grid grid-cols-4 gap-2">{['worst', 'dirty', 'normal', 'clean'].map(r => (<button key={r} onClick={() => setReportRating(r)} className={`py-4 rounded-xl text-xs font-bold border transition-all ${reportRating === r ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>{RATING_LABELS[r]}</button>))}</div></section>
+            <section className="space-y-3"><label className="text-xs font-bold text-slate-400">清掃後写真 (最大10枚)</label><div className="flex flex-wrap gap-3"><label className="w-20 h-20 flex items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-300"><CameraIcon className="w-8 h-8" /><input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} /></label>{reportImages.map((img, i) => (<div key={i} className="relative w-20 h-20"><img src={img} className="w-full h-full object-cover rounded-xl" alt="" /><button onClick={() => setReportImages(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg"><XCircleIcon className="w-3.5 h-3.5" /></button></div>))}</div></section>
+            <section className="space-y-3"><label className="text-xs font-bold text-slate-400">特記事項</label><textarea className="w-full h-28 p-4 text-sm bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-blue-500/20 resize-none" placeholder="忘れ物、備品不足など..." value={reportText} onChange={e => setReportText(e.target.value)} /></section>
+            <button onClick={submitReport} className="w-full py-5 bg-blue-600 text-white font-bold rounded-xl shadow-xl active:scale-[0.98]">報告を送信する</button>
           </div>
         </div>
       </div>
@@ -476,8 +476,8 @@ export default function App() {
     <div className="min-h-screen text-slate-900 bg-slate-50 overflow-x-hidden">
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 h-16 flex items-center">
         <div className="max-w-md mx-auto px-6 w-full flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('top')}><div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg"><CalendarIcon className="w-5 h-5" /></div><div><h1 className="text-sm font-bold tracking-tight leading-none">CLEAN PULSE</h1><span className="text-xs text-slate-400">{currentUser?.line_name} ({isAdmin ? '\u7ba1\u7406\u8005' : '\u30b9\u30bf\u30c3\u30d5'})</span></div></div>
-          <div className="flex items-center gap-2"><button onClick={syncAllFacilities} className={`p-2.5 bg-slate-50 rounded-xl text-slate-400 hover:text-blue-600 shadow-sm ${isSyncing ? 'animate-spin' : ''}`}><RefreshIcon className="w-5 h-5" /></button><button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1">\u30ed\u30b0\u30a2\u30a6\u30c8</button></div>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('top')}><div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg"><CalendarIcon className="w-5 h-5" /></div><div><h1 className="text-sm font-bold tracking-tight leading-none">CLEAN PULSE</h1><span className="text-xs text-slate-400">{currentUser?.line_name} ({isAdmin ? '管理者' : 'スタッフ'})</span></div></div>
+          <div className="flex items-center gap-2"><button onClick={syncAllFacilities} className={`p-2.5 bg-slate-50 rounded-xl text-slate-400 hover:text-blue-600 shadow-sm ${isSyncing ? 'animate-spin' : ''}`}><RefreshIcon className="w-5 h-5" /></button><button onClick={handleLogout} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1">ログアウト</button></div>
         </div>
       </header>
       <main className="max-w-md mx-auto px-6 pb-32 pt-2">
