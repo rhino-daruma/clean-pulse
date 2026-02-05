@@ -349,7 +349,112 @@ export default function App() {
           <button onClick={() => setFacilityTab('completed')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-all ${facilityTab === 'completed' ? 'bg-white shadow text-blue-600' : 'text-slate-400'}`}>清掃完了</button>
         </div>
         <div className="space-y-4">
-          {sorted.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">{facilityTab === 'next14' ? (currentFacility?.icalUrl ? '今後14日間の予定はありません' : 'iCal URLが未設定です') : '完了した清掃はありません'}</p></div>) : sorted.map(event => {
+          {facilityTab === 'next14' ? (
+            <>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3"><span className="text-xs font-bold bg-red-500 text-white px-3 py-1.5 rounded-full">本日</span><div className="flex-1 h-px bg-slate-200"></div></div>
+                {todayEvents.length === 0 ? (<div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-200"><p className="text-xs text-slate-400">予定なし</p></div>) : todayEvents.map(event => {
+            const date = new Date(event.start); const dayLabel = null;
+            const isExpanded = expandedEventId === event.id;
+            const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
+            const completed = assigned.filter(s => s.isCompleted);
+            const isFullyVerified = completed.length > 0 && completed.every(l => l.isVerified);
+            return (
+              <div key={event.id} className="space-y-1">
+                <div className={`bg-white border rounded-2xl shadow-sm overflow-hidden transition-all ${isExpanded ? 'border-blue-200 ring-4 ring-blue-500/5' : 'border-slate-100'}`}>
+                  <div className="p-5 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : event.id)}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">{date.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span>
+                      {assigned.length > 0 ? assigned.map(a => <span key={a.staffId} className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">{staffList.find(s => s.id === a.staffId)?.name}</span>) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">未割当</span>}
+                    </div>
+                    <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-800 truncate pr-6">{event.title}</h4><ChevronDownIcon className={`w-5 h-5 text-slate-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/></div>
+                  </div>
+                  {isExpanded && (
+                    <div className="px-5 pb-6 border-t border-slate-50 pt-5 space-y-5">
+                      <div className="space-y-4">
+                        {event.description && <div className="bg-slate-50 p-4 rounded-xl border border-slate-100"><p className="text-xs text-slate-400 font-bold mb-2">カレンダー詳細</p><p className="text-xs text-slate-600 whitespace-pre-wrap">{event.description}</p></div>}
+                        <div className="space-y-3">
+                          <p className="text-xs text-slate-400 font-bold">担当スタッフを選択</p>
+                          <div className="flex flex-wrap gap-2">{staffList.map(s => { const isSel = selections.some(sel => sel.eventId === event.id && sel.staffId === s.id && sel.facilityId === selectedFacilityId && sel.status === 'available'); return <button key={s.id} onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, s.id); }} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${isSel ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}>{s.name}</button>; })}</div>
+                          {assigned.filter(a => !a.isCompleted).map(a => { const s = staffList.find(st => st.id === a.staffId); if (!s) return null; return <button key={s.id} onClick={(e) => { e.stopPropagation(); setReportingTask({ eventId: event.id, staffId: s.id }); }} className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 text-white text-sm font-bold rounded-xl shadow-lg active:scale-[0.98]"><CheckCircleIcon className="w-5 h-5" />{s.name} として完了報告</button>; })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );})}
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3"><span className="text-xs font-bold bg-orange-500 text-white px-3 py-1.5 rounded-full">明日</span><div className="flex-1 h-px bg-slate-200"></div></div>
+                {tomorrowEvents.length === 0 ? (<div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-200"><p className="text-xs text-slate-400">予定なし</p></div>) : tomorrowEvents.map(event => {
+            const date = new Date(event.start); const dayLabel = null;
+            const isExpanded = expandedEventId === event.id;
+            const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
+            const completed = assigned.filter(s => s.isCompleted);
+            const isFullyVerified = completed.length > 0 && completed.every(l => l.isVerified);
+            return (
+              <div key={event.id} className="space-y-1">
+                <div className={`bg-white border rounded-2xl shadow-sm overflow-hidden transition-all ${isExpanded ? 'border-blue-200 ring-4 ring-blue-500/5' : 'border-slate-100'}`}>
+                  <div className="p-5 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : event.id)}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">{date.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span>
+                      {assigned.length > 0 ? assigned.map(a => <span key={a.staffId} className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">{staffList.find(s => s.id === a.staffId)?.name}</span>) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">未割当</span>}
+                    </div>
+                    <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-800 truncate pr-6">{event.title}</h4><ChevronDownIcon className={`w-5 h-5 text-slate-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/></div>
+                  </div>
+                  {isExpanded && (
+                    <div className="px-5 pb-6 border-t border-slate-50 pt-5 space-y-5">
+                      <div className="space-y-4">
+                        {event.description && <div className="bg-slate-50 p-4 rounded-xl border border-slate-100"><p className="text-xs text-slate-400 font-bold mb-2">カレンダー詳細</p><p className="text-xs text-slate-600 whitespace-pre-wrap">{event.description}</p></div>}
+                        <div className="space-y-3">
+                          <p className="text-xs text-slate-400 font-bold">担当スタッフを選択</p>
+                          <div className="flex flex-wrap gap-2">{staffList.map(s => { const isSel = selections.some(sel => sel.eventId === event.id && sel.staffId === s.id && sel.facilityId === selectedFacilityId && sel.status === 'available'); return <button key={s.id} onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, s.id); }} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${isSel ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}>{s.name}</button>; })}</div>
+                          {assigned.filter(a => !a.isCompleted).map(a => { const s = staffList.find(st => st.id === a.staffId); if (!s) return null; return <button key={s.id} onClick={(e) => { e.stopPropagation(); setReportingTask({ eventId: event.id, staffId: s.id }); }} className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 text-white text-sm font-bold rounded-xl shadow-lg active:scale-[0.98]"><CheckCircleIcon className="w-5 h-5" />{s.name} として完了報告</button>; })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );})}
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3"><span className="text-xs font-bold bg-slate-500 text-white px-3 py-1.5 rounded-full">明後日以降</span><div className="flex-1 h-px bg-slate-200"></div></div>
+                {laterEvents.length === 0 ? (<div className="py-6 text-center bg-white rounded-xl border border-dashed border-slate-200"><p className="text-xs text-slate-400">予定なし</p></div>) : laterEvents.map(event => {
+            const date = new Date(event.start); const dayLabel = null;
+            const isExpanded = expandedEventId === event.id;
+            const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
+            const completed = assigned.filter(s => s.isCompleted);
+            const isFullyVerified = completed.length > 0 && completed.every(l => l.isVerified);
+            return (
+              <div key={event.id} className="space-y-1">
+                <div className={`bg-white border rounded-2xl shadow-sm overflow-hidden transition-all ${isExpanded ? 'border-blue-200 ring-4 ring-blue-500/5' : 'border-slate-100'}`}>
+                  <div className="p-5 cursor-pointer" onClick={() => setExpandedEventId(isExpanded ? null : event.id)}>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500">{date.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', weekday: 'short' })}</span>
+                      {assigned.length > 0 ? assigned.map(a => <span key={a.staffId} className="text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100">{staffList.find(s => s.id === a.staffId)?.name}</span>) : <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-400">未割当</span>}
+                    </div>
+                    <div className="flex items-center justify-between"><h4 className="text-sm font-bold text-slate-800 truncate pr-6">{event.title}</h4><ChevronDownIcon className={`w-5 h-5 text-slate-300 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/></div>
+                  </div>
+                  {isExpanded && (
+                    <div className="px-5 pb-6 border-t border-slate-50 pt-5 space-y-5">
+                      <div className="space-y-4">
+                        {event.description && <div className="bg-slate-50 p-4 rounded-xl border border-slate-100"><p className="text-xs text-slate-400 font-bold mb-2">カレンダー詳細</p><p className="text-xs text-slate-600 whitespace-pre-wrap">{event.description}</p></div>}
+                        <div className="space-y-3">
+                          <p className="text-xs text-slate-400 font-bold">担当スタッフを選択</p>
+                          <div className="flex flex-wrap gap-2">{staffList.map(s => { const isSel = selections.some(sel => sel.eventId === event.id && sel.staffId === s.id && sel.facilityId === selectedFacilityId && sel.status === 'available'); return <button key={s.id} onClick={(e) => { e.stopPropagation(); toggleAttendance(event.id, s.id); }} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all ${isSel ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-400'}`}>{s.name}</button>; })}</div>
+                          {assigned.filter(a => !a.isCompleted).map(a => { const s = staffList.find(st => st.id === a.staffId); if (!s) return null; return <button key={s.id} onClick={(e) => { e.stopPropagation(); setReportingTask({ eventId: event.id, staffId: s.id }); }} className="w-full flex items-center justify-center gap-3 py-4 bg-green-600 text-white text-sm font-bold rounded-xl shadow-lg active:scale-[0.98]"><CheckCircleIcon className="w-5 h-5" />{s.name} として完了報告</button>; })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );})}
+              </div>
+            </>
+          ) : (sorted.length === 0 ? (<div className="py-12 text-center bg-white rounded-2xl border border-dashed border-slate-200"><p className="text-xs text-slate-400 font-bold">完了した清掃はありません</p></div>) : sorted.map(event => {
             const date = new Date(event.start); const dayLabel = getDayLabel(event.start);
             const isExpanded = expandedEventId === event.id;
             const assigned = selections.filter(s => s.eventId === event.id && s.facilityId === selectedFacilityId && s.status === 'available');
